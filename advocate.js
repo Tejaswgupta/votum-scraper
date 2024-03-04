@@ -196,18 +196,17 @@ await delay(10000)
 // Solve CAPTCHA and Submit the form
 // await attemptCaptcha(page);
 
-// try {
-//     const res = await attemptCaptcha(page);
-//     console.log("CAPTCHA solved and form submitted successfully.");
-//     console.log(res);
-//     // Additional logic to confirm submission success here...
-// } catch (error) {
-//     console.error("An error occurred:", error.message);
-// } finally {
-//     // await browser.close(); // Ensure the browser is closed properly
-//     console.log("done bro")
-// }
-// await page.click('button.btn.btn-primary[onclick="submitCaseNo();"]');
+try {
+    const res = await attemptCaptcha(page);
+    console.log("CAPTCHA solved and form submitted successfully.");
+    console.log(res);
+    // Additional logic to confirm submission success here...
+} catch (error) {
+    console.error("An error occurred:", error.message);
+} finally {
+    // await browser.close(); // Ensure the browser is closed properly
+    console.log("done bro")
+}
 
   // Wait for the resultsto load
   await delay(3000); // This delay may need to be adjusted depending on how long the site takes to load results
