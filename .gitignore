@@ -1,5 +1,7 @@
 # Ignore files starting with 'results'
 results*
+# Ignore files starting with 'results'
+eng*
 
 # Ignore files starting with 'caseNoResults'
 caseNoResults*

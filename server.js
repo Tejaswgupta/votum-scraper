@@ -67,7 +67,12 @@ function findLatestResultFile(dir, prefix) {
                     console.error('Unable to read result file:', err);
                     return res.status(500).send('Error reading result file');
                 }
+                // Send the response
                 res.json(JSON.parse(data));
+                // Delete the result file after sending the response
+                unlink(filePath)
+                    .then(() => console.log(`Deleted result file: ${filePath}`))
+                    .catch(err => console.error(`Error deleting result file: ${filePath}`, err));
             });
         });
     } catch (err) {
