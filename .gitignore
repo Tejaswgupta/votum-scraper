@@ -13,7 +13,9 @@ caseDetails*
 AdvResults*
 
 # Ignore files starting with 'formData'
-formData*
+formData* 
+formdata* 
+temp* 
 
 # Ignore files starting with 'test'
 test*

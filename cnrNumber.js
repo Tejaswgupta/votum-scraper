@@ -1,12 +1,12 @@
+import fs from 'fs';
+import { readFile } from 'fs/promises';
+import path from 'path';
 import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
 import { fileURLToPath } from 'url';
-import path from 'path';
-import fs from 'fs';
-import { readFile } from 'fs/promises';
 
 
-import { writeFileSync, unlinkSync } from "fs";
+import { unlinkSync, writeFileSync } from "fs";
 import { v4 as uuidv4 } from "uuid";
 
 
@@ -20,7 +20,7 @@ async function getCaptcha(elementHandle) {
 
   const tesseractOptions = {
     lang: 'eng',
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // Adjust based on your CAPTCHA
+    tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyz0123456789', // Adjust based on your CAPTCHA
     psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
     logger: m => console.log(m)
 };
@@ -120,12 +120,28 @@ async function delay(time) {
 
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({ headless: false }); // Set to false for debugging, true for production
+  // const browser = await puppeteer.launch({
+  //   defaultViewport: {width: 1920, height: 1080}
+  // });
+const browser = await puppeteer.launch({
+  headless: true, // Adjust based on your preference
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-accelerated-2d-canvas', '--proxy-server=https://216.97.239.173:12323']
+});
+
+  // Set to false for debugging, true for production
+
+  
   const page = await browser.newPage();
+
+  await page.authenticate({
+    username:'14a354cd1897b',
+    password:'1490a37130'
+  })
 
   // Navigate to the eCourts page
   await page.goto(
-    "https://services.ecourts.gov.in/ecourtindia_v6/?p=home/index&app_token=337f97323f30e038dce33f5bf3b4988c60ecc3ca77b244ec7566e73304cbed6f"
+    "https://services.ecourts.gov.in/ecourtindia_v6/?p=home/index&app_token=337f97323f30e038dce33f5bf3b4988c60ecc3ca77b244ec7566e73304cbed6f",
+    {timeout: 60000, waitUntil: 'networkidle0'}
   );
 
 
@@ -152,9 +168,9 @@ await delay(10000)
 // await attemptCaptcha(page);
 
 try {
-    const res = await attemptCaptcha(page);
+    await attemptCaptcha(page);
     console.log("CAPTCHA solved and form submitted successfully.");
-    console.log(res);
+    
     // Additional logic to confirm submission success here...
 } catch (error) {
     console.error("An error occurred:", error.message);
@@ -285,10 +301,3 @@ run();
 //     cnrNumber: " DLND010000052020"
 // };
 
-// // Example usage with dynamic formData
-// scrapeCourtData(formData).then(results => {
-//   console.log("done");
-//   // Do something with the results, e.g., send them back to the user
-// }).catch(error => {
-//   console.error("Scraping failed:", error);
-// });

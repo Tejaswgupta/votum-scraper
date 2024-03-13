@@ -2,118 +2,99 @@ import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
 import { fileURLToPath } from 'url';
 import path from 'path';
-import fs from 'fs';
-import { readFile } from 'fs/promises';
-
-import { writeFileSync, unlinkSync } from "fs";
+import { promises as fs } from 'fs'; // Use fs.promises for async file operations
 import { v4 as uuidv4 } from "uuid";
 
-// Function to take a screenshot of the CAPTCHA and solve it
+// Improved CAPTCHA solving function with async file operations
 async function getCaptcha(elementHandle) {
-  const screenshotData = await elementHandle.screenshot();
-  const filename = `img_${uuidv4()}.jpg`;
-  writeFileSync(filename, screenshotData);
+    const screenshotData = await elementHandle.screenshot();
+    const filename = `img_${uuidv4()}.jpg`;
+    await fs.writeFile(filename, screenshotData);
 
-  const tesseractOptions = {
-    lang: 'eng',
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // Adjust based on your CAPTCHA
-    psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
-    logger: m => console.log(m)
-};
+    try {
+        const tesseractOptions = {
+            lang: 'eng',
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            psm: 6,
+            logger: m => console.log(m)
+        };
 
-const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data.text;
+        const result = await Tesseract.recognize(filename, "eng", tesseractOptions);
+        return result.data.text.trim();
+    } finally {
+        await fs.unlink(filename); // Ensures the file is deleted even if Tesseract fails
+    }
+}
 
-
-//   const r = (await Tesseract.recognize(filename, "eng")).data.text;
-  unlinkSync(filename);
-  return r.trim(); // Return solved captcha text
+async function delay(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
 }
 
 async function attemptCaptcha(page) {
     let captchaSolved = false;
     let formSubmitted = false;
     while (!captchaSolved) {
-        // Click the CAPTCHA refresh button before each attempt
         await page.waitForSelector('a[onclick="refreshCaptcha()"] img.refresh-btn', {visible: true});
         await page.click('a[onclick="refreshCaptcha()"] img.refresh-btn');
-
-        // Wait a bit for the new CAPTCHA to load
         await delay(4000);
 
         const img = await page.$("#captcha_image");
         const text = await getCaptcha(img);
 
-        // Clear the CAPTCHA input field before typing
         await page.evaluate(() => document.getElementById("case_captcha_code").value = "");
-        // Enter the captcha text
         await page.type("#case_captcha_code", text, { delay: 100 });
 
         if (!formSubmitted) {
             await page.waitForSelector('button.btn.btn-primary[onclick="submitCaseNo();"]', {visible: true});
             await page.click('button.btn.btn-primary[onclick="submitCaseNo();"]');
-            formSubmitted = true; // Mark the form as submitted
+            formSubmitted = true;
 
-            // Wait for the response to the submission
             await delay(3000);
 
-            // Check if the "Enter captcha" modal is present
             const isEnterCaptchaModalPresent = await page.evaluate(() => {
                 const modalText = document.querySelector(".modal-content")?.innerText || "";
                 return modalText.includes("Enter captcha");
             });
 
             if (isEnterCaptchaModalPresent) {
-                // If the modal is present, close it
                 await page.evaluate(() => {
                     const closeButton = document.querySelector('.btn-close[onclick*="validateError"]');
                     closeButton?.click();
                 });
                 console.log("Closed the 'Enter captcha' modal.");
-                formSubmitted = false; // Allow retrying the captcha submission
-                continue; // Continue to the next iteration of the loop to retry solving the captcha
+                formSubmitted = false;
+                continue;
             }
         }
 
-        // Determine if the invalid CAPTCHA modal is present
         const isInvalidCaptchaPresent = await page.evaluate(() => {
             const invalidCaptchaAlert = document.querySelector(".alert.alert-danger-cust");
             return invalidCaptchaAlert && getComputedStyle(invalidCaptchaAlert).display !== 'none';
         });
 
         if (isInvalidCaptchaPresent) {
-            // Close the invalid CAPTCHA modal and retry
             await page.click('.btn-close[data-bs-dismiss="modal"]');
             console.log("Invalid CAPTCHA. Retrying...");
-            await delay(1000); // Wait a bit for the modal to close
-            formSubmitted = false; // Reset form submission status for a retry
+            await delay(1000);
+            formSubmitted = false;
         } else {
             console.log("CAPTCHA solved successfully. Form submitted.");
             captchaSolved = true;
-            return true; // Exit the loop indicating success
+            return true;
         }
     }
 }
 
-
-
-
-
-
-async function delay(time) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}
-
-// This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({ headless: false }); // Set to false for debugging, true for production
-  const page = await browser.newPage();
+    const browser = await puppeteer.launch({
+        headless: true, // Adjust based on your preference
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-accelerated-2d-canvas']
+    }); // Set to false for debugging, true for production
+    const page = await browser.newPage();
 
-  // Navigate to the eCourts page
-  await page.goto(
-    "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index&app_token=8d21c32c306b556a9bd59555f64446f5810586c374d09eaa1fd6452834ca0fca"
-  );
-
-  // Handle any potential modals that might appear upon page load
+    try {
+        await page.goto("https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index&app_token=8d21c32c306b556a9bd59555f64446f5810586c374d09eaa1fd6452834ca0fca", {waitUntil: 'networkidle0', timeout: 60000});
+        // Handle any potential modals that might appear upon page load
   try {
     await page.waitForSelector("#validateError", { timeout: 15000, visible: true });
     await page.click("#validateError > div > div > div.modal-header.text-center.align-items-start > button");
@@ -260,58 +241,38 @@ function getNextFileName(baseDir, baseName, ext) {
     }
     
     return filePath;
+}// This should be replaced with actual data extracted from the page
+        await saveResultsData(resultsData);
+    } catch (error) {
+        console.error("An error occurred during scraping:", error);
+    } finally {
+        await browser.close();
+    }
 }
 
+// Improved saveResultsData function with async file operations
 async function saveResultsData(resultsData) {
-    // Determine the next available file name
-    const filePath = getNextFileName(__dirname, 'AdvResults', '.json');
-    
-    // Write the results data to the new file
-    fs.writeFileSync(filePath, JSON.stringify(resultsData, null, 2), 'utf8');
-    console.log('Results data saved to', filePath);
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const filePath = path.join(__dirname, `AdvResults-${uuidv4()}.json`);
+
+    await fs.writeFile(filePath, JSON.stringify(resultsData, null, 2), 'utf8');
+    console.log(`Results data saved to ${filePath}`);
 }
 
-saveResultsData(resultsData).catch(console.error);
-
-
-  // Close the browser when done or not needed
-  await browser.close();
-}
-
-// Example usage with dynamic formData, this would come from your website's frontend
-// const formData = {
-//     searchType: 'Advocate',
-//     state: 'Delhi',
-//     district: 'New Delhi',
-//     courtComplex: 'Patiala House Court Complex',
-//     Advocate: 'Rahul',
-//     caseStatus: 'Pending',
-//   };
-
-
-// Assuming the formData is passed as a stringified JSON as the third argument
 async function run() {
-  const formDataFilePath = process.argv[2];
-  try {
-    const formDataJson = await readFile(formDataFilePath, 'utf8');
-    const formData = JSON.parse(formDataJson);
+    // Simulating formData for testing purposes
+    const formData = {
+        // Example formData, replace with actual test data as needed
+        searchType: "CNR Number",
+        state: "Delhi",
+        district: "New Delhi",
+        courtComplex: "Patiala House Court Complex",
+        Advocate: 'Rahul Kumar',
+        caseStatus: 'Pending',
+    };
 
-    // Example usage with dynamic formData
-scrapeCourtData(formData).then(results => {
-  console.log("done");
-  // Do something with the results, e.g., send them back to the user
-}).catch(error => {
-  console.error("Scraping failed:", error);
-});
-    
-  } catch (err) {
-    console.error('Error processing formData:', err);
-  }
+    console.log("Starting scrape with formData:", formData);
+    await scrapeCourtData(formData);
 }
 
 run();
-
-// scrapeCourtData(formData).then((results) => {
-//     console.log("done")
-//   // Do something with the results, e.g., send them back to the user
-// });

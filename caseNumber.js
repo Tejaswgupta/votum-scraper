@@ -1,8 +1,8 @@
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
-import { fileURLToPath } from "url";
+import { fileURLToPath } from 'url';
 
 import { unlinkSync, writeFileSync } from "fs";
 import { v4 as uuidv4 } from "uuid";
@@ -117,13 +117,9 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: false,
-
-    args: [
-      "--proxy-server=216.97.239.173:12323",
-      "--proxy-auth=14a354cd1897b:1490a37130",
-    ],
-  }); // Set to false for debugging, true for production
+    headless: true, // Adjust based on your preference
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-accelerated-2d-canvas']
+}); // Set to false for debugging, true for production
   const page = await browser.newPage();
 
   await page.authenticate({
