@@ -1,10 +1,11 @@
-import fs from 'fs';
-import path from 'path';
+import { exec } from "child_process";
+
+import fs, { unlinkSync, writeFileSync } from "fs";
+import { readFile } from "fs/promises";
+import path from "path";
 import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
-import { fileURLToPath } from 'url';
-
-import { unlinkSync, writeFileSync } from "fs";
+import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 
 // Function to take a screenshot of the CAPTCHA and solve it
@@ -17,7 +18,7 @@ async function getCaptcha(elementHandle) {
     lang: "eng",
     tessedit_char_whitelist:
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", // Adjust based on your CAPTCHA
-    psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
+    psm: 6, // Assume a single uniform block of text.
     logger: (m) => console.log(m),
   };
 
@@ -27,6 +28,52 @@ async function getCaptcha(elementHandle) {
   //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
   unlinkSync(filename);
   return r.trim(); // Return solved captcha text
+}
+
+async function attemptAudio(page) {
+  const audioUrl = await page.evaluate(() => {
+    return document.querySelector(".captcha_play_button").href;
+  });
+
+  const filename = uuidv4();
+
+  await fetch(audioUrl)
+    .then(async (response) => await response.arrayBuffer())
+    .then((r) => {
+      fs.writeFileSync(`${filename}.wav`, Buffer.from(r));
+    });
+
+  // const audioResponse = await page.goto(audioUrl);
+  // const audioBuffer = await audioResponse.buffer();
+
+  // Save the audio file to disk
+  // fs.writeFileSync("audio1.wav", audioBuffer);
+
+  await exec(
+    `whisper ${filename}.wav --model tiny.en --output_format txt`,
+    async (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error: ${error.message}`);
+        return;
+      }
+      const text = fs.readFileSync(`${filename}.txt`, "utf8");
+      console.log(text);
+      // Do something with the transcribed text here
+
+      // Optionally, delete the audio and text files if they are no longer needed
+      // fs.unlinkSync(`${filename}.wav`);
+      // fs.unlinkSync(`${filename}.txt`);
+
+      const finalText = text.replace("-", "");
+      // Enter the captcha text
+      await page.type("#case_captcha_code", finalText, { delay: 100 });
+      await page.waitForSelector(
+        'button.btn.btn-primary[onclick="submitCaseNo();"]',
+        { visible: true }
+      );
+      await page.click('button.btn.btn-primary[onclick="submitCaseNo();"]');
+    }
+  );
 }
 
 async function attemptCaptcha(page) {
@@ -117,9 +164,15 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: true, // Adjust based on your preference
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-accelerated-2d-canvas']
-}); // Set to false for debugging, true for production
+    headless: false, // Adjust based on your preference
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-accelerated-2d-canvas",
+      "--proxy-server=216.97.239.173:12323",
+      "--proxy-auth=14a354cd1897b:1490a37130",
+    ],
+  }); // Set to false for debugging, true for production
   const page = await browser.newPage();
 
   await page.authenticate({
@@ -227,20 +280,17 @@ async function scrapeCourtData(formData) {
   await page.type("#search_case_no", formData.caseNumber); // Make sure this is the correct selector
   await page.type("#rgyear", formData.Year.toString()); // Adjust the selector as per actual field for the year
 
-  await delay(10000);
-  // Solve CAPTCHA and Submit the form
-  // await attemptCaptcha(page);
+  await delay(5000);
 
   try {
     const res = await attemptCaptcha(page);
+    // const res = await attemptAudio(page);
     console.log("CAPTCHA solved and form submitted successfully.");
     console.log(res);
-    // Additional logic to confirm submission success here...
   } catch (error) {
     console.error("An error occurred:", error.message);
   } finally {
     // await browser.close(); // Ensure the browser is closed properly
-    console.log("done bro");
   }
 
   // Wait for the resultsto load
@@ -318,27 +368,26 @@ async function scrapeCourtData(formData) {
 }
 
 // Example usage with dynamic formData, this would come from your website's frontend
-const formData = {
-  state: "Delhi",
-  district: "New Delhi",
-  courtComplex: "Patiala House Court Complex",
-  caseType: "CRIMINAL APPEAL",
-  caseNumber: "2",
-  Year: 2020,
-};
+// const formData = {
+//   state: "Delhi",
+//   district: "New Delhi",
+//   courtComplex: "Patiala House Court Complex",
+//   caseType: "CRIMINAL APPEAL",
+//   caseNumber: "2",
+//   Year: 2020,
+// };
 
 // Assuming the formData is passed as a stringified JSON as the third argument
 async function run() {
-  // const formDataFilePath = process.argv[2];
+  const formDataFilePath = process.argv[2];
   try {
-    // const formDataJson = await readFile(formDataFilePath, "utf8");
-    // const formData = JSON.parse(formDataJson);
+    const formDataJson = await readFile(formDataFilePath, "utf8");
+    const formData = JSON.parse(formDataJson);
 
     // Example usage with dynamic formData
     scrapeCourtData(formData)
       .then((results) => {
         console.log("done");
-        // Do something with the results, e.g., send them back to the user
       })
       .catch((error) => {
         console.error("Scraping failed:", error);
