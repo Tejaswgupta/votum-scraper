@@ -1,6 +1,8 @@
 import cors from "cors";
 import express from "express";
+import { fetchAdvocate } from "./advocate.js";
 import { fetchCaseNum } from "./caseNumber.js";
+import { fetchCNR } from "./cnrNumber.js";
 import { predictStatutes } from "./statute.js";
 
 const app = express();
@@ -19,13 +21,13 @@ async function runScriptWithFormData(scriptPath, formData, res) {
 
       res.json(JSON.parse(val));
     } else if (scriptPath == "advocate.js") {
-      const val = await fetchCaseNum(formData);
+      const val = await fetchAdvocate(formData);
       console.log(val);
       console.log(typeof val);
 
       res.json(JSON.parse(val));
     } else if (scriptPath == "cnrNumber.js") {
-      const val = await fetchCaseNum(formData);
+      const val = await fetchCNR(formData);
       console.log(val);
       console.log(typeof val);
 

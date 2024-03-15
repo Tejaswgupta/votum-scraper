@@ -86,7 +86,8 @@ async function attemptCaptcha(page) {
     );
     await page.click('a[onclick="refreshCaptcha()"] img.refresh-btn');
 
-    await page.waitForSelector("#captcha_image");
+    await delay(4000);
+
     const img = await page.$("#captcha_image");
 
     // const text = await getCaptcha(img);
@@ -168,7 +169,7 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: true, // Adjust based on your preference
+    headless: false, // Adjust based on your preference
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -327,8 +328,6 @@ async function scrapeCourtData(formData) {
     });
     return data;
   });
-
-  console.log(resultsData);
 
   await browser.close();
   return JSON.stringify(resultsData, null, 2);
