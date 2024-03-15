@@ -1,13 +1,10 @@
 import { exec } from "child_process";
 
 import fs, { unlinkSync, writeFileSync } from "fs";
-import { readFile } from "fs/promises";
-import path from "path";
 import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
-import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
-import { getCaptchaUsingAPI } from './utils.js';
+import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to take a screenshot of the CAPTCHA and solve it
 async function getCaptcha(elementHandle) {
@@ -80,6 +77,7 @@ async function attemptAudio(page) {
 async function attemptCaptcha(page) {
   let captchaSolved = false;
   let formSubmitted = false;
+
   while (!captchaSolved) {
     // Click the CAPTCHA refresh button before each attempt
     await page.waitForSelector(
@@ -88,9 +86,7 @@ async function attemptCaptcha(page) {
     );
     await page.click('a[onclick="refreshCaptcha()"] img.refresh-btn');
 
-    // Wait a bit for the new CAPTCHA to load
-    await delay(4000);
-
+    await page.waitForSelector("#captcha_image");
     const img = await page.$("#captcha_image");
 
     // const text = await getCaptcha(img);
@@ -99,6 +95,8 @@ async function attemptCaptcha(page) {
     const screenshotData = await img.screenshot();
     const text = await getCaptchaUsingAPI(screenshotData);
 
+    console.log("logging 2");
+    console.log(text);
 
     await page.evaluate(
       () => (document.getElementById("case_captcha_code").value = "")
@@ -286,7 +284,7 @@ async function scrapeCourtData(formData) {
   await page.type("#search_case_no", formData.caseNumber); // Make sure this is the correct selector
   await page.type("#rgyear", formData.Year.toString()); // Adjust the selector as per actual field for the year
 
-  await delay(5000);
+  await delay(3000);
 
   try {
     const res = await attemptCaptcha(page);
@@ -295,10 +293,7 @@ async function scrapeCourtData(formData) {
     console.log(res);
   } catch (error) {
     console.error("An error occurred:", error.message);
-  } finally {
-    // await browser.close(); // Ensure the browser is closed properly
   }
-
   // Wait for the resultsto load
   await delay(3000); // This delay may need to be adjusted depending on how long the site takes to load results
 
@@ -329,83 +324,23 @@ async function scrapeCourtData(formData) {
       }
 
       data.push({ srNo, caseDetails, parties, viewLinkOnClick, cnrNumber });
-
-      // if(row.querySelector('td') && row.querySelectorAll('td').length > 1) {
-      //     const srNo = row.querySelector('td:nth-child(1)')?.innerText.trim();
-      //     const caseDetails = row.querySelector('td:nth-child(2)')?.innerText.trim();
-      //     const parties = row.querySelector('td:nth-child(3)')?.innerText.trim().replace(/\n/g, ' '); // Replacing newlines with spaces for readability
-      //     const viewLinkOnClick = row.querySelector('td:nth-child(4) a')?.getAttribute('onclick');
-
-      // }
     });
     return data;
   });
 
-  // writing to a file
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  console.log(resultsData);
 
-  function getNextFileName(baseDir, baseName, ext) {
-    let counter = 1;
-    let filePath = path.join(baseDir, `${baseName}${counter}${ext}`);
-
-    // Check if the file exists. If it does, increment the counter and test again
-    while (fs.existsSync(filePath)) {
-      counter++;
-      filePath = path.join(baseDir, `${baseName}${counter}${ext}`);
-    }
-
-    return filePath;
-  }
-
-  async function saveResultsData(resultsData) {
-    // Determine the next available file name
-    const filePath = getNextFileName(__dirname, "caseNoResults", ".json");
-
-    // Write the results data to the new file
-    fs.writeFileSync(filePath, JSON.stringify(resultsData, null, 2), "utf8");
-    console.log("Results data saved to", filePath);
-  }
-
-  saveResultsData(resultsData).catch(console.error);
-
-  // Close the browser when done or not needed
   await browser.close();
+  return JSON.stringify(resultsData, null, 2);
 }
 
-// Example usage with dynamic formData, this would come from your website's frontend
-// const formData = {
-//   state: "Delhi",
-//   district: "New Delhi",
-//   courtComplex: "Patiala House Court Complex",
-//   caseType: "CRIMINAL APPEAL",
-//   caseNumber: "2",
-//   Year: 2020,
-// };
-
 // Assuming the formData is passed as a stringified JSON as the third argument
-async function run() {
-  const formDataFilePath = process.argv[2];
+export async function fetchCaseNum(formData) {
+  console.log("called fetchCase");
   try {
-    const formDataJson = await readFile(formDataFilePath, "utf8");
-    const formData = JSON.parse(formDataJson);
-
     // Example usage with dynamic formData
-    scrapeCourtData(formData)
-      .then((results) => {
-        console.log("done");
-      })
-      .catch((error) => {
-        console.error("Scraping failed:", error);
-      });
+    return await scrapeCourtData(formData);
   } catch (err) {
     console.error("Error processing formData:", err);
   }
 }
-
-run();
-
-// scrapeCourtData(formData).then((results) => {
-//     console.log("done")
-//   // Do something with the results, e.g., send them back to the user
-// });

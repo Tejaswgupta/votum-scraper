@@ -1,16 +1,7 @@
-import { exec as execCb } from 'child_process';
-import cors from 'cors';
-import express from 'express';
-import { promises as fs } from 'fs';
-import path, { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { promisify } from 'util';
-import { predictStatutes } from './statute.js';
-
-const exec = promisify(execCb); // Convert exec to promise-based
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import cors from "cors";
+import express from "express";
+import { fetchCaseNum } from "./caseNumber.js";
+import { predictStatutes } from "./statute.js";
 
 const app = express();
 
@@ -19,89 +10,72 @@ app.use(express.json());
 
 const port = 3001;
 
-async function runScriptWithFormData(scriptPath, formData, res, resultFilePrefix) {
-    const tempFileName = `formData-${Date.now()}.json`;
-    console.log(`Creating temporary file: ${tempFileName}`);
-    try {
-        await fs.writeFile(tempFileName, JSON.stringify(formData), 'utf8');
-        console.log(`Temporary file ${tempFileName} created successfully.`);
+async function runScriptWithFormData(scriptPath, formData, res) {
+  try {
+    if (scriptPath == "caseNumber.js") {
+      const val = await fetchCaseNum(formData);
+      console.log(val);
+      console.log(typeof val);
 
-        try {
-            const { stdout, stderr } = await exec(`node ${scriptPath} ${tempFileName}`);
-            console.log(`Script executed successfully. stdout: ${stdout}`);
-            if (stderr) console.error(`Script execution errors: ${stderr}`);
-        } finally {
-            await fs.unlink(tempFileName);
-            console.log(`Temporary file ${tempFileName} deleted.`);
-        }
+      res.json(JSON.parse(val));
+    } else if (scriptPath == "advocate.js") {
+      const val = await fetchCaseNum(formData);
+      console.log(val);
+      console.log(typeof val);
 
-        const latestFile = await findLatestResultFile(__dirname, resultFilePrefix);
-        console.log(`Latest result file found: ${latestFile}`);
+      res.json(JSON.parse(val));
+    } else if (scriptPath == "cnrNumber.js") {
+      const val = await fetchCaseNum(formData);
+      console.log(val);
+      console.log(typeof val);
 
-        if (!latestFile) {
-            console.log('No results file found.');
-            return res.status(404).send('No results file found');
-        }
-
-        const filePath = path.join(__dirname, latestFile);
-        const data = await fs.readFile(filePath, 'utf8');
-        console.log(`Result file ${latestFile} read successfully.`);
-
-        res.json(JSON.parse(data));
-
-        await fs.unlink(filePath);
-        console.log(`Result file ${latestFile} deleted.`);
-    } catch (err) {
-        console.error('Failed to handle script execution or file operations:', err);
-        res.status(500).send('Server error');
+      res.json(JSON.parse(val));
     }
+  } catch (err) {
+    console.error("Failed to handle script execution or file operations:", err);
+    res.status(500).send("Server error");
+  }
 }
 
-async function findLatestResultFile(dir, prefix) {
-    console.log(`Searching for latest result file in ${dir} with prefix ${prefix}`);
-    const files = await fs.readdir(dir);
-    const filteredFiles = files.filter(file => file.startsWith(prefix)).sort();
-    const latestFile = filteredFiles.length ? filteredFiles[filteredFiles.length - 1] : null;
-    return latestFile;
-}
+app.post("/search", (req, res) => {
+  const formData = req.body;
+  let scriptPath;
 
-app.post('/search', (req, res) => {
-    const formData = req.body;
-    let scriptPath, resultFilePrefix;
+  switch (formData.searchType) {
+    case "Case Number":
+      scriptPath = "caseNumber.js";
+      break;
 
-    switch (formData.searchType) {
-        case 'Case Number':
-            scriptPath = 'caseNumber.js';
-            resultFilePrefix = 'caseNoResults';
-            break;
-        case 'Advocate':
-            scriptPath = 'advocate.js';
-            resultFilePrefix = 'AdvResults';
-            break;
-        case 'CNR Number':
-            scriptPath = 'cnrNumber.js';
-            resultFilePrefix = 'caseDetails';
-            break;
-        default:
-            console.log(`Invalid search type: ${formData.searchType}`);
-            return res.status(400).send('Invalid search type');
-    }
+    case "Advocate":
+      scriptPath = "advocate.js";
+      break;
 
-    console.log(`Processing search request. Type: ${formData.searchType}, Script: ${scriptPath}`);
-    runScriptWithFormData(scriptPath, formData, res, resultFilePrefix);
+    case "CNR Number":
+      scriptPath = "cnrNumber.js";
+      break;
+
+    default:
+      console.log(`Invalid search type: ${formData.searchType}`);
+      return res.status(400).send("Invalid search type");
+  }
+
+  console.log(
+    `Processing search request. Type: ${formData.searchType}, Script: ${scriptPath}`
+  );
+  runScriptWithFormData(scriptPath, formData, res);
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running at http://localhost:${port}`);
 });
 
 // server.js file mein
-app.get('/', (req, res) => {
-    res.send('Main Page!')
-})
+app.get("/", (req, res) => {
+  res.send("Main Page!");
+});
 
-app.post('/statute', async (req, res) => {
+app.post("/statute", async (req, res) => {
   console.log(req.body);
   const statute = await predictStatutes(req.body.firText, req.body.language);
   res.status(200).send(statute);
-})
+});
