@@ -1,8 +1,8 @@
+import { promises as fs } from 'fs'; // Use fs.promises for async file operations
+import path from 'path';
 import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
 import { fileURLToPath } from 'url';
-import path from 'path';
-import { promises as fs } from 'fs'; // Use fs.promises for async file operations
 import { v4 as uuidv4 } from "uuid";
 
 // Improved CAPTCHA solving function with async file operations
@@ -88,7 +88,11 @@ async function attemptCaptcha(page) {
 async function scrapeCourtData(formData) {
     const browser = await puppeteer.launch({
         headless: true, // Adjust based on your preference
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-accelerated-2d-canvas']
+        args: ['--no-sandbox', '--disable-setuid-sandbox',
+            '--disable-accelerated-2d-canvas',
+            "--proxy-server=216.97.239.173:12323",
+            "--proxy-auth=14a354cd1897b:1490a37130",
+        ]
     }); // Set to false for debugging, true for production
     const page = await browser.newPage();
 

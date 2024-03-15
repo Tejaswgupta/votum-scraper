@@ -7,6 +7,7 @@ import puppeteer from "puppeteer";
 import Tesseract from "tesseract.js";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
+import { getCaptchaUsingAPI } from './utils.js';
 
 // Function to take a screenshot of the CAPTCHA and solve it
 async function getCaptcha(elementHandle) {
@@ -91,9 +92,14 @@ async function attemptCaptcha(page) {
     await delay(4000);
 
     const img = await page.$("#captcha_image");
-    const text = await getCaptcha(img);
 
-    // Clear the CAPTCHA input field before typing
+    // const text = await getCaptcha(img);
+
+    //!Using API
+    const screenshotData = await img.screenshot();
+    const text = await getCaptchaUsingAPI(screenshotData);
+
+
     await page.evaluate(
       () => (document.getElementById("case_captcha_code").value = "")
     );
@@ -164,7 +170,7 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: false, // Adjust based on your preference
+    headless: true, // Adjust based on your preference
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
