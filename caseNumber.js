@@ -7,72 +7,72 @@ import { v4 as uuidv4 } from "uuid";
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to take a screenshot of the CAPTCHA and solve it
-async function getCaptcha(elementHandle) {
-  const screenshotData = await elementHandle.screenshot();
-  const filename = `img_${uuidv4()}.jpg`;
-  writeFileSync(filename, screenshotData);
+// async function getCaptcha(elementHandle) {
+//   const screenshotData = await elementHandle.screenshot();
+//   const filename = `img_${uuidv4()}.jpg`;
+//   writeFileSync(filename, screenshotData);
 
-  const tesseractOptions = {
-    lang: "eng",
-    tessedit_char_whitelist:
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", // Adjust based on your CAPTCHA
-    psm: 6, // Assume a single uniform block of text.
-    logger: (m) => console.log(m),
-  };
+//   const tesseractOptions = {
+//     lang: "eng",
+//     tessedit_char_whitelist:
+//       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", // Adjust based on your CAPTCHA
+//     psm: 6, // Assume a single uniform block of text.
+//     logger: (m) => console.log(m),
+//   };
 
-  const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data
-    .text;
+//   const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data
+//     .text;
 
-  //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
-  unlinkSync(filename);
-  return r.trim(); // Return solved captcha text
-}
+//   //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
+//   unlinkSync(filename);
+//   return r.trim(); // Return solved captcha text
+// }
 
-async function attemptAudio(page) {
-  const audioUrl = await page.evaluate(() => {
-    return document.querySelector(".captcha_play_button").href;
-  });
+// async function attemptAudio(page) {
+//   const audioUrl = await page.evaluate(() => {
+//     return document.querySelector(".captcha_play_button").href;
+//   });
 
-  const filename = uuidv4();
+//   const filename = uuidv4();
 
-  await fetch(audioUrl)
-    .then(async (response) => await response.arrayBuffer())
-    .then((r) => {
-      fs.writeFileSync(`${filename}.wav`, Buffer.from(r));
-    });
+//   await fetch(audioUrl)
+//     .then(async (response) => await response.arrayBuffer())
+//     .then((r) => {
+//       fs.writeFileSync(`${filename}.wav`, Buffer.from(r));
+//     });
 
-  // const audioResponse = await page.goto(audioUrl);
-  // const audioBuffer = await audioResponse.buffer();
+//   // const audioResponse = await page.goto(audioUrl);
+//   // const audioBuffer = await audioResponse.buffer();
 
-  // Save the audio file to disk
-  // fs.writeFileSync("audio1.wav", audioBuffer);
+//   // Save the audio file to disk
+//   // fs.writeFileSync("audio1.wav", audioBuffer);
 
-  await exec(
-    `whisper ${filename}.wav --model tiny.en --output_format txt`,
-    async (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error: ${error.message}`);
-        return;
-      }
-      const text = fs.readFileSync(`${filename}.txt`, "utf8");
-      console.log(text);
-      // Do something with the transcribed text here
+//   await exec(
+//     `whisper ${filename}.wav --model tiny.en --output_format txt`,
+//     async (error, stdout, stderr) => {
+//       if (error) {
+//         console.error(`Error: ${error.message}`);
+//         return;
+//       }
+//       const text = fs.readFileSync(`${filename}.txt`, "utf8");
+//       console.log(text);
+//       // Do something with the transcribed text here
 
-      // Optionally, delete the audio and text files if they are no longer needed
-      // fs.unlinkSync(`${filename}.wav`);
-      // fs.unlinkSync(`${filename}.txt`);
+//       // Optionally, delete the audio and text files if they are no longer needed
+//       // fs.unlinkSync(`${filename}.wav`);
+//       // fs.unlinkSync(`${filename}.txt`);
 
-      const finalText = text.replace("-", "");
-      // Enter the captcha text
-      await page.type("#case_captcha_code", finalText, { delay: 100 });
-      await page.waitForSelector(
-        'button.btn.btn-primary[onclick="submitCaseNo();"]',
-        { visible: true }
-      );
-      await page.click('button.btn.btn-primary[onclick="submitCaseNo();"]');
-    }
-  );
-}
+//       const finalText = text.replace("-", "");
+//       // Enter the captcha text
+//       await page.type("#case_captcha_code", finalText, { delay: 100 });
+//       await page.waitForSelector(
+//         'button.btn.btn-primary[onclick="submitCaseNo();"]',
+//         { visible: true }
+//       );
+//       await page.click('button.btn.btn-primary[onclick="submitCaseNo();"]');
+//     }
+//   );
+// }
 
 async function attemptCaptcha(page) {
   let captchaSolved = false;
@@ -169,7 +169,7 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: false, // Adjust based on your preference
+    headless: true, // Adjust based on your preference
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",

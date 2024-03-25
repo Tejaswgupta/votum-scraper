@@ -1,30 +1,27 @@
-import { promises as fs } from "fs"; // Use fs.promises for async file operations
 import puppeteer from "puppeteer";
-import Tesseract from "tesseract.js";
-import { v4 as uuidv4 } from "uuid";
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Improved CAPTCHA solving function with async file operations
-async function getCaptcha(elementHandle) {
-  const screenshotData = await elementHandle.screenshot();
-  const filename = `img_${uuidv4()}.jpg`;
-  await fs.writeFile(filename, screenshotData);
+// async function getCaptcha(elementHandle) {
+//   const screenshotData = await elementHandle.screenshot();
+//   const filename = `img_${uuidv4()}.jpg`;
+//   await fs.writeFile(filename, screenshotData);
 
-  try {
-    const tesseractOptions = {
-      lang: "eng",
-      tessedit_char_whitelist:
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-      psm: 6,
-      logger: (m) => console.log(m),
-    };
+//   try {
+//     const tesseractOptions = {
+//       lang: "eng",
+//       tessedit_char_whitelist:
+//         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+//       psm: 6,
+//       logger: (m) => console.log(m),
+//     };
 
-    const result = await Tesseract.recognize(filename, "eng", tesseractOptions);
-    return result.data.text.trim();
-  } finally {
-    await fs.unlink(filename); // Ensures the file is deleted even if Tesseract fails
-  }
-}
+//     const result = await Tesseract.recognize(filename, "eng", tesseractOptions);
+//     return result.data.text.trim();
+//   } finally {
+//     await fs.unlink(filename); // Ensures the file is deleted even if Tesseract fails
+//   }
+// }
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -49,17 +46,21 @@ async function attemptCaptcha(page) {
     const screenshotData = await img.screenshot();
     const text = await getCaptchaUsingAPI(screenshotData);
 
-    await page.evaluate(
-      () => (document.getElementById("case_captcha_code").value = "")
-    );
-    await page.type("#case_captcha_code", text, { delay: 100 });
+    // Clear the CAPTCHA input field before typing
+    //Clear the CAPTCHA input field before typing
+        await page.evaluate(() => document.getElementById("adv_captcha_code").value = "");
+        // Enter the captcha text
+        await page.type("#adv_captcha_code", text, { delay: 100 });
 
     if (!formSubmitted) {
-      await page.waitForSelector(
-        'button.btn.btn-primary[onclick="submitCaseNo();"]',
-        { visible: true }
-      );
-      await page.click('button.btn.btn-primary[onclick="submitCaseNo();"]');
+      await delay(1000);
+      await page.evaluate(() => {
+        // Find the button element
+        const button = document.querySelector("button.btn.btn-primary");
+
+        // Trigger the onclick event by calling the function directly
+        submit_adv_name();
+      });
       formSubmitted = true;
 
       await delay(3000);
@@ -69,7 +70,6 @@ async function attemptCaptcha(page) {
           document.querySelector(".modal-content")?.innerText || "";
         return modalText.includes("Enter captcha");
       });
-
       if (isEnterCaptchaModalPresent) {
         await page.evaluate(() => {
           const closeButton = document.querySelector(
@@ -110,15 +110,15 @@ async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
     headless: true, // Adjust based on your preference
     args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-accelerated-2d-canvas",
       "--proxy-server=216.97.239.173:12323",
       "--proxy-auth=14a354cd1897b:1490a37130",
     ],
   }); // Set to false for debugging, true for production
   const page = await browser.newPage();
-
+  await page.authenticate({
+    username: "14a354cd1897b",
+    password: "1490a37130",
+  });
   try {
     await page.goto(
       "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index&app_token=8d21c32c306b556a9bd59555f64446f5810586c374d09eaa1fd6452834ca0fca",
@@ -223,7 +223,7 @@ async function scrapeCourtData(formData) {
       console.error("Invalid case status:", formData.caseStatus);
     }
 
-    await delay(10000);
+    await delay(2000);
     // Solve CAPTCHA and Submit the form
     // await attemptCaptcha(page);
 
@@ -282,11 +282,9 @@ async function scrapeCourtData(formData) {
       });
       return data;
     }
+    const caseDetails = await page.evaluate(extractResults);
 
-    // writing to a file
-    const resultsData = await page.evaluate(extractResults);
-
-    return JSON.stringify(resultsData, null, 2);
+    return JSON.stringify(caseDetails);
   } catch (error) {
     console.error("An error occurred during scraping:", error);
   } finally {

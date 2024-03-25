@@ -1,55 +1,5 @@
 import puppeteer from "puppeteer";
-import Tesseract from "tesseract.js";
-import { fileURLToPath } from "url";
-import path from "path";
-import fs from "fs";
-import { readFile } from "fs/promises";
-
-import { writeFileSync, unlinkSync } from "fs";
-import { v4 as uuidv4 } from "uuid";
-async function selectOptionByText(selectElement, keywords, isPartial = true) {
-  const options = await selectElement.$$("option");
-  for (const option of options) {
-    const text = await (await option.getProperty("textContent")).jsonValue();
-    const lowerText = text.toLowerCase();
-
-    // Convert keywords to lowercase for case-insensitive matching
-    const lowerKeywords = keywords.map((keyword) => keyword.toLowerCase());
-
-    // Check if option text contains any of the keywords
-    const matchesKeywords = lowerKeywords.some((keyword) =>
-      lowerText.includes(keyword)
-    );
-
-    if (isPartial && matchesKeywords) {
-      const value = await (await option.getProperty("value")).jsonValue();
-      return value; // Return the value attribute of the matching option
-    }
-  }
-  throw new Error(`Option with keywords "${keywords.join(", ")}" not found`);
-}
-
-// Function to take a screenshot of the CAPTCHA and solve it
-async function getCaptcha(elementHandle) {
-  const screenshotData = await elementHandle.screenshot();
-  const filename = `img_${uuidv4()}.jpg`;
-  writeFileSync(filename, screenshotData);
-
-  const tesseractOptions = {
-    lang: "eng",
-    tessedit_char_whitelist:
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", // Adjust based on your CAPTCHA
-    psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
-    logger: (m) => console.log(m),
-  };
-
-  const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data
-    .text;
-
-  //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
-  unlinkSync(filename);
-  return r.trim(); // Return solved captcha text
-}
+import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to close any visible modal
 async function closeVisibleModal(page) {
@@ -84,7 +34,12 @@ async function attemptCaptcha(page) {
     await delay(2000);
 
     const img = await page.$("#captcha_image");
-    const text = await getCaptcha(img);
+
+    // const text = await getCaptcha(img);
+
+    //!Using API
+    const screenshotData = await img.screenshot();
+    const text = await getCaptchaUsingAPI(screenshotData);
 
     // Clear the CAPTCHA input field before typing
     await page.evaluate(() => (document.getElementById("captcha").value = ""));
@@ -135,10 +90,10 @@ async function attemptCaptcha(page) {
   }
 }
 
-async function scrapeHighCourt(formData) {
-  const browser = await puppeteer.launch({ headless: false }); // headless: false for debugging
+async function scrapeCourtData(formData) {
+  const browser = await puppeteer.launch({ headless: true }); // headless: false for debugging
   const page = await browser.newPage();
-
+  try {
   await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
     waitUntil: "networkidle0",
   });
@@ -243,18 +198,12 @@ async function scrapeHighCourt(formData) {
     }, selector);
   }
 
-  // Usage
-  try {
-    await waitForElement("#dispTable");
-    console.log("Element found.");
-  } catch (error) {
-    console.error("Element not found within the specified time.", error);
-  }
+  await page.waitForSelector('#dispTable', {visible: true});
   await delay(4000);
   // saving the data
 
-  async function extractResults(page) {
-    return await page.evaluate(() => {
+  async function extractResults() {
+    // return await page.evaluate(() => {
       const data = [];
       const rows = document.querySelectorAll("#dispTable tbody tr");
       rows.forEach((row, index) => {
@@ -285,66 +234,52 @@ async function scrapeHighCourt(formData) {
         });
       });
       return data;
-    });
+    // });
   }
 
-  // writing to a file
-  const resultsData = await extractResults(page); // Pass the `page` object when calling the function
-
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  function getNextFileName(baseDir, baseName, ext) {
-    let counter = 1;
-    let filePath = path.join(baseDir, `${baseName}${counter}${ext}`);
-
-    // Check if the file exists. If it does, increment the counter and test again
-    while (fs.existsSync(filePath)) {
-      counter++;
-      filePath = path.join(baseDir, `${baseName}${counter}${ext}`);
-    }
-
-    return filePath;
-  }
-
-  async function saveResultsData(resultsData) {
-    // Determine the next available file name
-    const filePath = getNextFileName(__dirname, "AdvResults", ".json");
-
-    // Write the results data to the new file
-    fs.writeFileSync(filePath, JSON.stringify(resultsData, null, 2), "utf8");
-    console.log("Results data saved to", filePath);
-  }
-
-  saveResultsData(resultsData).catch(console.error);
-
+  const resultsData = await page.evaluate(extractResults);
+  console.log(resultsData)
+  return JSON.stringify(resultsData);
+} catch (error) {
+  console.error("An error occurred during scraping:", error);
+} finally {
   await browser.close();
+}
 }
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-// Assuming the formData is passed as a stringified JSON as the third argument
-async function run() {
-  const formDataFilePath = process.argv[2];
+export async function fetchAdvocateHC(formData) {
+  console.log("called fetchAdvocate highcourt");
   try {
-    const formDataJson = await readFile(formDataFilePath, "utf8");
-    const formData = JSON.parse(formDataJson);
-
     // Example usage with dynamic formData
-    scrapeCourtData(formData)
-      .then((results) => {
-        console.log("done");
-      })
-      .catch((error) => {
-        console.error("Scraping failed:", error);
-      });
+    return await scrapeCourtData(formData);
   } catch (err) {
     console.error("Error processing formData:", err);
   }
 }
+// // Assuming the formData is passed as a stringified JSON as the third argument
+// async function run() {
+//   const formDataFilePath = process.argv[2];
+//   try {
+//     const formDataJson = await readFile(formDataFilePath, "utf8");
+//     const formData = JSON.parse(formDataJson);
 
-run();
+//     // Example usage with dynamic formData
+//     scrapeCourtData(formData)
+//       .then((results) => {
+//         console.log("done");
+//       })
+//       .catch((error) => {
+//         console.error("Scraping failed:", error);
+//       });
+//   } catch (err) {
+//     console.error("Error processing formData:", err);
+//   }
+// }
+
+// run();
 
 // Example formData
 // const formData = {

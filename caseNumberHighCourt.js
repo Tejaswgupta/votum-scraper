@@ -1,12 +1,5 @@
 import puppeteer from "puppeteer";
-import Tesseract from "tesseract.js";
-import { fileURLToPath } from "url";
-import path from "path";
-import fs from "fs";
-import { readFile } from "fs/promises";
-
-import { writeFileSync, unlinkSync } from "fs";
-import { v4 as uuidv4 } from "uuid";
+import { getCaptchaUsingAPI } from "./utils.js";
 
 
 async function selectOptionByText(selectElement, keywords, isPartial = true) {
@@ -32,26 +25,26 @@ async function selectOptionByText(selectElement, keywords, isPartial = true) {
 }
 
 // Function to take a screenshot of the CAPTCHA and solve it
-async function getCaptcha(elementHandle) {
-  const screenshotData = await elementHandle.screenshot();
-  const filename = `img_${uuidv4()}.jpg`;
-  writeFileSync(filename, screenshotData);
+// async function getCaptcha(elementHandle) {
+//   const screenshotData = await elementHandle.screenshot();
+//   const filename = `img_${uuidv4()}.jpg`;
+//   writeFileSync(filename, screenshotData);
 
-  const tesseractOptions = {
-    lang: "eng",
-    tessedit_char_whitelist:
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", // Adjust based on your CAPTCHA
-    psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
-    logger: (m) => console.log(m),
-  };
+//   const tesseractOptions = {
+//     lang: "eng",
+//     tessedit_char_whitelist:
+//       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", // Adjust based on your CAPTCHA
+//     psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
+//     logger: (m) => console.log(m),
+//   };
 
-  const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data
-    .text;
+//   const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data
+//     .text;
 
-  //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
-  unlinkSync(filename);
-  return r.trim(); // Return solved captcha text
-}
+//   //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
+//   unlinkSync(filename);
+//   return r.trim(); // Return solved captcha text
+// }
 
 // Function to close any visible modal
 async function closeVisibleModal(page) {
@@ -84,9 +77,10 @@ async function attemptCaptcha(page) {
 
     // Wait a bit for the new CAPTCHA to load
     await delay(2000);
-
     const img = await page.$("#captcha_image");
-    const text = await getCaptcha(img);
+    //!Using API
+    const screenshotData = await img.screenshot();
+    const text = await getCaptchaUsingAPI(screenshotData);
 
     // Clear the CAPTCHA input field before typing
     await page.evaluate(() => (document.getElementById("captcha").value = ""));
@@ -137,8 +131,8 @@ async function attemptCaptcha(page) {
   }
 }
 
-async function scrapeHighCourt(formData) {
-  const browser = await puppeteer.launch({ headless: false }); // headless: false for debugging
+async function scrapeCourtData(formData) {
+  const browser = await puppeteer.launch({ headless: true }); // headless: false for debugging
   const page = await browser.newPage();
 
   await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
@@ -259,60 +253,44 @@ async function scrapeHighCourt(formData) {
     return data;
   });
 
-  // writing to a file
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  function getNextFileName(baseDir, baseName, ext) {
-    let counter = 1;
-    let filePath = path.join(baseDir, `${baseName}${counter}${ext}`);
-
-    // Check if the file exists. If it does, increment the counter and test again
-    while (fs.existsSync(filePath)) {
-      counter++;
-      filePath = path.join(baseDir, `${baseName}${counter}${ext}`);
-    }
-
-    return filePath;
-  }
-
-  async function saveResultsData(resultsData) {
-    // Determine the next available file name
-    const filePath = getNextFileName(__dirname, "caseNoResults", ".json");
-
-    // Write the results data to the new file
-    fs.writeFileSync(filePath, JSON.stringify(resultsData, null, 2), "utf8");
-    console.log("Results data saved to", filePath);
-  }
-
-  saveResultsData(resultsData).catch(console.error);
   await browser.close();
+  return JSON.stringify(resultsData, null, 2);
 }
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-// Assuming the formData is passed as a stringified JSON as the third argument
-async function run() {
-  const formDataFilePath = process.argv[2];
+export async function fetchCaseNumHC(formData) {
+  console.log("called fetchCase highcourt");
   try {
-    const formDataJson = await readFile(formDataFilePath, "utf8");
-    const formData = JSON.parse(formDataJson);
-
     // Example usage with dynamic formData
-    scrapeCourtData(formData)
-      .then((results) => {
-        console.log("done");
-      })
-      .catch((error) => {
-        console.error("Scraping failed:", error);
-      });
+    return await scrapeCourtData(formData);
   } catch (err) {
     console.error("Error processing formData:", err);
   }
 }
 
-run();
+// Assuming the formData is passed as a stringified JSON as the third argument
+// async function run() {
+//   const formDataFilePath = process.argv[2];
+//   try {
+//     const formDataJson = await readFile(formDataFilePath, "utf8");
+//     const formData = JSON.parse(formDataJson);
+
+//     // Example usage with dynamic formData
+//     scrapeCourtData(formData)
+//       .then((results) => {
+//         console.log("done");
+//       })
+//       .catch((error) => {
+//         console.error("Scraping failed:", error);
+//       });
+//   } catch (err) {
+//     console.error("Error processing formData:", err);
+//   }
+// }
+
+// run();
 
 // Example formData
 // const formData = {

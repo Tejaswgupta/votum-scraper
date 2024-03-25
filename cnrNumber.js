@@ -2,35 +2,6 @@ import puppeteer from "puppeteer";
 
 import { getCaptchaUsingAPI } from "./utils.js";
 
-// Function to take a screenshot of the CAPTCHA and solve it
-//! With Tesseract
-// async function getCaptcha(elementHandle) {
-//   const screenshotData = await elementHandle.screenshot();
-//   const filename = `img_${uuidv4()}.jpg`;
-//   writeFileSync(filename, screenshotData);
-
-//   const tesseractOptions = {
-//     lang: 'eng',
-//     tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyz0123456789', // Adjust based on your CAPTCHA
-//     psm: 6, // Assume a single uniform block of text. You might need to experiment with this.
-//     logger: m => console.log(m)
-//   };
-
-//   const r = (await Tesseract.recognize(filename, "eng", tesseractOptions)).data.text;
-
-//   //   const r = (await Tesseract.recognize(filename, "eng")).data.text;
-//   unlinkSync(filename);
-//   return r.trim(); // Return solved captcha text
-// }
-
-async function getCaptcha(elementHandle) {
-  const screenshotData = await elementHandle.screenshot();
-  const base64Encoded = screenshotData.toString("base64");
-  const hash = crypto.createHash("sha256").update(base64Encoded).digest("hex");
-
-  return r.trim(); // Return solved captcha text
-}
-
 async function attemptCaptcha(page) {
   let captchaSolved = false;
   let formSubmitted = false;
@@ -152,24 +123,6 @@ async function scrapeCourtData(formData) {
   // Fill in the CNR number input field
   await page.waitForSelector("#cino", { visible: true });
   await page.type("#cino", formData.cnrNumber);
-
-  async function selectOptionByText(
-    selectElement,
-    textToMatch,
-    isPartial = false
-  ) {
-    const options = await selectElement.$$("option");
-    for (const option of options) {
-      const text = await (await option.getProperty("textContent")).jsonValue();
-      if (
-        isPartial ? text.includes(textToMatch) : text.trim() === textToMatch
-      ) {
-        const value = await (await option.getProperty("value")).jsonValue();
-        return value; // Return the value of the matching option
-      }
-    }
-    throw new Error(`Option with text "${textToMatch}" not found`);
-  }
 
   await delay(10000);
 
