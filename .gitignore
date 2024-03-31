@@ -1,3 +1,5 @@
+# Ignore captcha folder
+captcha_files
 # Ignore files starting with 'results'
 results*
 # Ignore files starting with 'results'

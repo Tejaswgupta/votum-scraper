@@ -188,22 +188,39 @@ async function scrapeCourtData(formData) {
   // Select the Case Type from the dropdown
   // Assuming formData.caseType contains a partial text to match
   await delay(1000);
-  const caseTypeSelect = await page.$("#case_type");
-  const keywords = ["C372", "CRIMINAL APPEAL U/S 372 Cr.PC."]; // Keywords to look for
-  const caseTypeValue = await selectOptionByText(
-    caseTypeSelect,
-    keywords,
-    true
-  );
-  await page.select("#case_type", caseTypeValue);
-  console.log("Selected case type with keywords:", keywords.join(", "));
+
+  const caseTypeValue = formData.caseType.split('-')[1];; // The value for "C372(CRIMINAL APPEAL U/S 372 Cr.PC.)-100"
+
+  // Wait for the dropdown to be available
+  await page.waitForSelector('#case_type');
+
+  // Click the dropdown to show its options
+  await page.click('#case_type');
+
+  // Select the option directly by clicking it
+  const optionValueSelector = `#case_type option[value="${caseTypeValue}"]`;
+  await page.waitForSelector(optionValueSelector); // Ensure the option is available
+  await page.evaluate((optionValueSelector) => {
+    const option = document.querySelector(optionValueSelector);
+    if (option) {
+      option.selected = true; // Select the option
+      const event = new Event('change', { bubbles: true });
+      option.parentNode.dispatchEvent(event); // Dispatch the change event on the select element
+    }
+  }, optionValueSelector);
+
+  // Optionally, verify if the correct option is selected
+  const selectedValue = await page.evaluate(() => document.querySelector('#case_type').value);
+
+  console.log("Selected case type:", formData.caseType);
 
   await delay(500);
   // Enter the case number
   await page.type("#search_case_no", formData.caseNumber);
 
   // Enter the year
-  await page.type("#rgyear", formData.caseYear);
+  await page.type("#rgyear", formData.Year.toString());
+  console.log("now captcha")
 
   try {
     const res = await attemptCaptcha(page);
