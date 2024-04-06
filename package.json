@@ -12,11 +12,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.42.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "events": "^3.3.0",
     "express": "^4.18.3",
     "metabypass": "^1.1.1",
+    "node-cron": "^3.0.3",
     "nopecha": "^1.0.10",
     "openai": "^4.28.4",
     "p-limit": "^5.0.0",
