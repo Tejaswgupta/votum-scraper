@@ -90,7 +90,7 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: true, // Adjust based on your preference
+    headless: false, // Adjust based on your preference
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
