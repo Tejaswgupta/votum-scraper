@@ -76,8 +76,7 @@ Fact Statement: "${fact}"
 
 const openai = new OpenAI({
   apiKey: "EMPTY",
-  dangerouslyAllowBrowser: true,
-  baseURL: "https://model-api.thevotum.com/v1",
+  baseURL: "https://model.thevotum.com/v1",
 });
 
 async function translate(text) {
@@ -115,6 +114,7 @@ async function translate(text) {
 }
 
 function extractStatutes(gptOutput) {
+  console.log(gptOutput);
   const regex = /\[([^\]]+)\]/g;
   const statutes = gptOutput.match(regex);
   if (statutes) {
@@ -125,7 +125,6 @@ function extractStatutes(gptOutput) {
 }
 
 async function generate(inputText) {
-  console.log(openai);
   const com = promtMaker(inputText);
 
   const modelName = (await openai.models.list()).data[0].id;
@@ -192,7 +191,6 @@ ${ans.join(" ")}
 Correct Statutes:
 `;
 
-  console.log(filter_prompt);
 
   const filtered = await openai.chat.completions.create({
     model: modelName,
@@ -210,7 +208,6 @@ Correct Statutes:
     ],
   });
 
-  console.log(filtered);
 
   return filtered.choices[0].message.content;
 }

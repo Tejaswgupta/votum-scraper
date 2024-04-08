@@ -48,9 +48,9 @@ async function attemptCaptcha(page) {
 
     // Clear the CAPTCHA input field before typing
     //Clear the CAPTCHA input field before typing
-        await page.evaluate(() => document.getElementById("adv_captcha_code").value = "");
-        // Enter the captcha text
-        await page.type("#adv_captcha_code", text, { delay: 100 });
+    await page.evaluate(() => document.getElementById("adv_captcha_code").value = "");
+    // Enter the captcha text
+    await page.type("#adv_captcha_code", text, { delay: 100 });
 
     if (!formSubmitted) {
       await delay(1000);
@@ -108,17 +108,25 @@ async function attemptCaptcha(page) {
 
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: true, // Adjust based on your preference
+    headless: "shell", // Adjust based on your preference
     args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-accelerated-2d-canvas",
       "--proxy-server=216.97.239.173:12323",
-      "--proxy-auth=14a354cd1897b:1490a37130",
+      `--proxy-auth=${process.env.USERNAME}:${process.env.PASSWORD}`,
     ],
   }); // Set to false for debugging, true for production
+
   const page = await browser.newPage();
+
+  
   await page.authenticate({
-    username: "14a354cd1897b",
-    password: "1490a37130",
+    username: `${process.env.USERNAME}`,
+    password: `${process.env.PASSWORD}`,
   });
+
+
   try {
     await page.goto(
       "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index&app_token=8d21c32c306b556a9bd59555f64446f5810586c374d09eaa1fd6452834ca0fca",

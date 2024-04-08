@@ -1,20 +1,20 @@
-import { Configuration, NopeCHAApi } from "nopecha";
 import fs from 'fs';
+import { Configuration, NopeCHAApi } from "nopecha";
 import path from 'path';
 
 function generateFileName(baseDir, prefix, ext) {
-    let counter = 1; 
+    let counter = 1;
     let filePath;
     do {
         filePath = path.join(baseDir, `${prefix}_${counter}${ext}`);
-        counter++; 
-    } while (fs.existsSync(filePath)); 
+        counter++;
+    } while (fs.existsSync(filePath));
     return filePath;
 }
 
 export async function getCaptchaUsingAPI(image) {
     const configuration = new Configuration({
-        apiKey: 'sub_1OufbWCRwBwvt6pttFeIThTV',
+        apiKey: process.env.API_KEY,
     });
     const nopecha = new NopeCHAApi(configuration);
 

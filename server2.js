@@ -1,12 +1,12 @@
 import cors from "cors";
 import express from "express";
 import { fetchAdvocate } from "./advocate.js";
-import { fetchCaseNum } from "./caseNumber.js";
-import { fetchCNR } from "./cnrNumber.js";
-import { predictStatutes } from "./statute.js";
-import { fetchCaseNumHC } from "./caseNumberHighCourt.js";
-import { fetchCNRhighcourt } from "./cnrNumberHighCourt.js";
 import { fetchAdvocateHC } from "./advocateHighCourt.js";
+import { fetchCaseNum } from "./caseNumber.js";
+import { fetchCaseNumHC } from "./caseNumberHighCourt.js";
+import { fetchCNR } from "./cnrNumber.js";
+import { fetchCNRhighcourt } from "./cnrNumberHighCourt.js";
+import { predictStatutes } from "./statute.js";
 const app = express();
 
 app.use(cors());
@@ -34,55 +34,56 @@ async function runScriptWithFormData(scriptPath, formData, res) {
       console.log(typeof val);
 
       res.json(JSON.parse(val));
-    }  else if (scriptPath == "caseNumberHighCourt.js") {
+    } else if (scriptPath == "caseNumberHighCourt.js") {
       const val = await fetchCaseNumHC(formData);
       console.log(val);
       console.log(typeof val);
 
       res.json(JSON.parse(val));
-    } 
+    }
     else if (scriptPath == "advocateHighCourt.js") {
       const val = await fetchAdvocateHC(formData);
       console.log(val);
       console.log(typeof val);
 
       res.json(JSON.parse(val));
-    } 
+    }
     else if (scriptPath == "cnrNumberHighCourt.js") {
       const val = await fetchCNRhighcourt(formData);
       console.log(val);
       console.log(typeof val);
 
       res.json(JSON.parse(val));
-    } 
+    }
   } catch (err) {
     console.error("Failed to handle script execution or file operations:", err);
     res.status(500).send("Server error");
   }
 }
+// { "court": "district court", "searchType": "Case Number", "state": "Uttar Pradesh", "district": "Kanpur Nagar", "courtComplex": "Kanpur Nagar District Court Complex", "caseType": "CRIMINAL APPEAL", "caseNumber": "01", "Year": 2024 }
 
 app.post("/search", (req, res) => {
   const formData = req.body;
   let scriptPath;
-  
+
   if (formData.court === "district court") {
-  switch (formData.searchType) {
-    case "Case Number":
-      scriptPath = "caseNumber.js";
-      break;
+    switch (formData.searchType) {
+      case "Case Number":
+        scriptPath = "caseNumber.js";
+        break;
 
-    case "Advocate":
-      scriptPath = "advocate.js";
-      break;
+      case "Advocate":
+        scriptPath = "advocate.js";
+        break;
 
-    case "CNR Number":
-      scriptPath = "cnrNumber.js";
-      break;
+      case "CNR Number":
+        scriptPath = "cnrNumber.js";
+        break;
 
-    default:
-      console.log(`Invalid search type: ${formData.searchType}`);
-      return res.status(400).send("Invalid search type");
-  }
+      default:
+        console.log(`Invalid search type: ${formData.searchType}`);
+        return res.status(400).send("Invalid search type");
+    }
   } else if (formData.court === "high court") {
     switch (formData.searchType) {
       case 'Case Number':
@@ -103,6 +104,12 @@ app.post("/search", (req, res) => {
     `Processing search request. Type: ${formData.searchType}, Script: ${scriptPath}`
   );
   runScriptWithFormData(scriptPath, formData, res);
+});
+
+app.post("/statute", async (req, res) => {
+  console.log(req.body);
+  const statute = await predictStatutes(req.body.firText, req.body.language);
+  res.status(200).send(statute);
 });
 
 app.listen(port, () => {

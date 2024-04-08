@@ -100,19 +100,23 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: "shell",
     args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-accelerated-2d-canvas",
       "--proxy-server=216.97.239.173:12323",
-      "--proxy-auth=14a354cd1897b:1490a37130",
+      `--proxy-auth=${process.env.USERNAME}:${process.env.PASSWORD}`,
     ],
   }); // Set to false for debugging, true for production
 
   const page = await browser.newPage();
 
   await page.authenticate({
-    username: "14a354cd1897b",
-    password: "1490a37130",
+    username: `${process.env.USERNAME}`,
+    password: `${process.env.PASSWORD}`,
   });
+
 
   // Navigate to the eCourts page
   await page.goto(

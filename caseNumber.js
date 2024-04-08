@@ -1,9 +1,5 @@
-import { exec } from "child_process";
 
-import fs, { unlinkSync, writeFileSync } from "fs";
 import puppeteer from "puppeteer";
-import Tesseract from "tesseract.js";
-import { v4 as uuidv4 } from "uuid";
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to take a screenshot of the CAPTCHA and solve it
@@ -168,27 +164,30 @@ async function delay(time) {
 
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
+
   const browser = await puppeteer.launch({
-    headless: true, // Adjust based on your preference
+    headless: 'shell', // Adjust based on your preference
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-accelerated-2d-canvas",
       "--proxy-server=216.97.239.173:12323",
-      "--proxy-auth=14a354cd1897b:1490a37130",
+      `--proxy-auth=${process.env.USERNAME}:${process.env.PASSWORD}`,
     ],
   }); // Set to false for debugging, true for production
   const page = await browser.newPage();
 
   await page.authenticate({
-    username: "14a354cd1897b",
-    password: "1490a37130",
+    username: `${process.env.USERNAME}`,
+    password: `${process.env.PASSWORD}`,
   });
 
   // Navigate to the eCourts page
   await page.goto(
     "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index&app_token=8d21c32c306b556a9bd59555f64446f5810586c374d09eaa1fd6452834ca0fca"
   );
+
+  console.log(formData)
 
   // Handle any potential modals that might appear upon page load
   try {
