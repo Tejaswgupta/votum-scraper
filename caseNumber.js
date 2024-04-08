@@ -311,12 +311,14 @@ async function scrapeCourtData(formData) {
 
       const srNo = row.children[0]?.innerText.trim();
       const caseDetails = row.children[1]?.innerText.trim();
-      const parties = row.children[2]?.innerText.trim();
+      const parties = row.children[2]?.innerText.trim().replace(/\n/g, " ");
       const viewLinkOnClick = row.children[3]
         ?.querySelector("a")
         ?.getAttribute("onclick");
 
-      const regex = /viewHistory\([^,]+,'([^']+)',/;
+      // const regex = /viewHistory\([^,]+,'([^']+)',/;
+      const regex = /viewHistory\(\d+,'([^']+)',/;
+
       let cnrNumber;
       const match = viewLinkOnClick.match(regex);
       if (match && match[1]) {

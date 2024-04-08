@@ -256,13 +256,14 @@ async function scrapeCourtData(formData) {
         ?.querySelector("a")
         ?.getAttribute("onclick");
 
-      // Extract CNR number from the 'onclick' attribute using regex
-      let cnrNumber;
-      const regex = /viewHistory\([^,]+,'([^']+)',/;
-      const match = viewLinkOnClick.match(regex);
-      if (match && match[1]) {
-        cnrNumber = match[1]; // Extracted CNR number
-      }
+// Adjusted regex to match the third argument of the viewHistory function
+const regex = /viewHistory\([^,]+,'[^']+',\s*'([^']+)'/;
+let cnrNumber;
+const match = viewLinkOnClick.match(regex);
+if (match && match[1]) {
+  cnrNumber = match[1]; // This now correctly captures the third argument, which is the CNR number
+}
+
 
       // Pushing extracted data into the array
       data.push({ srNo, caseDetails, parties, viewLinkOnClick, cnrNumber });
