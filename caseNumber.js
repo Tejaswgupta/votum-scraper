@@ -165,6 +165,8 @@ async function delay(time) {
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
 
+  console.log(`${process.env.USERNAME}`, `${process.env.PASSWORD}`);
+
   const browser = await puppeteer.launch({
     headless: 'shell', // Adjust based on your preference
     args: [
@@ -298,8 +300,7 @@ async function scrapeCourtData(formData) {
   await delay(3000); // This delay may need to be adjusted depending on how long the site takes to load results
 
   // waiting for the results to show up
-  await page.waitForSelector("#case_no_res", { visible: true });
-  await page.waitForSelector("#dispTable", { visible: true });
+  await page.waitForSelector("#dispTable");
 
   // saving the data
   const resultsData = await page.evaluate(() => {

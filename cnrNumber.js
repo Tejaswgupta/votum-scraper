@@ -112,6 +112,8 @@ async function scrapeCourtData(formData) {
 
   const page = await browser.newPage();
 
+  console.log(`${process.env.USERNAME}`, `${process.env.PASSWORD}`);
+
   await page.authenticate({
     username: `${process.env.USERNAME}`,
     password: `${process.env.PASSWORD}`,

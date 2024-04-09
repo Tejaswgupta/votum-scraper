@@ -132,7 +132,7 @@ async function attemptCaptcha(page) {
 }
 
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({ headless: true }); // headless: false for debugging
+  const browser = await puppeteer.launch({ headless: 'shell' }); // headless: false for debugging
   const page = await browser.newPage();
 
   await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
@@ -256,13 +256,13 @@ async function scrapeCourtData(formData) {
         ?.querySelector("a")
         ?.getAttribute("onclick");
 
-// Adjusted regex to match the third argument of the viewHistory function
-const regex = /viewHistory\([^,]+,'[^']+',\s*'([^']+)'/;
-let cnrNumber;
-const match = viewLinkOnClick.match(regex);
-if (match && match[1]) {
-  cnrNumber = match[1]; // This now correctly captures the third argument, which is the CNR number
-}
+      // Adjusted regex to match the third argument of the viewHistory function
+      const regex = /viewHistory\([^,]+,'[^']+',\s*'([^']+)'/;
+      let cnrNumber;
+      const match = viewLinkOnClick.match(regex);
+      if (match && match[1]) {
+        cnrNumber = match[1]; // This now correctly captures the third argument, which is the CNR number
+      }
 
 
       // Pushing extracted data into the array

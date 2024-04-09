@@ -91,119 +91,119 @@ async function attemptCaptcha(page) {
 }
 
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({ headless: true }); // headless: false for debugging
+  const browser = await puppeteer.launch({ headless: 'shell' }); // headless: false for debugging
   const page = await browser.newPage();
   try {
-  await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
-    waitUntil: "networkidle0",
-  });
-
-  // Click on the 'Case Status' menu item
-  await page.click("#leftPaneMenuCS img.case-status-dp");
-
-  await delay(2000);
-
-  // closing the modal
-
-  await closeVisibleModal(page);
-
-  //   Proceed with further actions
-  // Select High Court
-  await page.evaluate((highCourt) => {
-    const selectElement = document.querySelector("#sess_state_code");
-    Array.from(selectElement.options).forEach((option) => {
-      if (option.textContent === highCourt) {
-        selectElement.value = option.value;
-      }
+    await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
+      waitUntil: "networkidle0",
     });
-    // Trigger change event after selecting the option
-    const event = new Event("change", { bubbles: true });
-    selectElement.dispatchEvent(event);
-  }, formData.highCourt);
 
-  await delay(1000);
+    // Click on the 'Case Status' menu item
+    await page.click("#leftPaneMenuCS img.case-status-dp");
 
-  // Select Bench
-  await page.evaluate((bench) => {
-    const selectElement = document.querySelector("#court_complex_code");
-    Array.from(selectElement.options).forEach((option) => {
-      if (option.textContent.trim() === bench) {
-        selectElement.value = option.value;
-      }
-    });
-    // Trigger change event after selecting the option
-    const event = new Event("change", { bubbles: true });
-    selectElement.dispatchEvent(event);
-  }, formData.bench);
+    await delay(2000);
 
-  // Assuming you have already navigated to the page and have a page object
-  await delay(1000);
-  await page.waitForSelector("#CSAdvName", { visible: true }); // Ensure the element is present and visible
-  await page.evaluate(() => {
-    document.querySelector("#CSAdvName").click(); // Directly click on the element via JavaScript
-  });
+    // closing the modal
 
-  // Type the advocate's name into the input field
-  await page.waitForSelector("#advocate_name", { visible: true });
-  await page.type("#advocate_name", formData.Advocate);
+    await closeVisibleModal(page);
 
-  //selecting case status
-  // Based on formData.caseStatus, click the corresponding radio button
-  if (formData.caseStatus === "Pending") {
-    await page.click("#radPAdvt"); // Clicks on the "Pending" radio button
-  } else if (formData.caseStatus === "Disposed") {
-    await page.click("#radDAdvt"); // Clicks on the "Disposed" radio button
-  } else if (formData.caseStatus === "Both") {
-    await page.click("#radBAdvt"); // Clicks on the "Both" radio button
-  } else {
-    console.error("Invalid case status:", formData.caseStatus);
-  }
-
-  await delay(4000);
-
-  try {
-    const res = await attemptCaptcha(page);
-    console.log("CAPTCHA solved and form submitted successfully.");
-    console.log(res);
-    // Additional logic to confirm submission success here...
-  } catch (error) {
-    console.error("An error occurred:", error.message);
-  } finally {
-    // await browser.close(); // Ensure the browser is closed properly
-    console.log("done bro");
-  }
-
-  // Wait for the resultsto load
-  await delay(3000); // This delay may need to be adjusted depending on how long the site takes to load results
-
-  async function waitForElement(selector) {
-    await page.evaluate((selector) => {
-      return new Promise((resolve, reject) => {
-        const observer = new MutationObserver((mutations) => {
-          if (document.querySelector(selector)) {
-            resolve(true);
-            observer.disconnect();
-          }
-        });
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-        // Optional: set a timeout to stop waiting after a while
-        setTimeout(() => {
-          observer.disconnect();
-          reject(new Error("Timeout waiting for element"));
-        }, 60000); // 60 seconds timeout
+    //   Proceed with further actions
+    // Select High Court
+    await page.evaluate((highCourt) => {
+      const selectElement = document.querySelector("#sess_state_code");
+      Array.from(selectElement.options).forEach((option) => {
+        if (option.textContent === highCourt) {
+          selectElement.value = option.value;
+        }
       });
-    }, selector);
-  }
+      // Trigger change event after selecting the option
+      const event = new Event("change", { bubbles: true });
+      selectElement.dispatchEvent(event);
+    }, formData.highCourt);
 
-  await page.waitForSelector('#dispTable', {visible: true});
-  await delay(4000);
-  // saving the data
+    await delay(1000);
 
-  async function extractResults() {
-    // return await page.evaluate(() => {
+    // Select Bench
+    await page.evaluate((bench) => {
+      const selectElement = document.querySelector("#court_complex_code");
+      Array.from(selectElement.options).forEach((option) => {
+        if (option.textContent.trim() === bench) {
+          selectElement.value = option.value;
+        }
+      });
+      // Trigger change event after selecting the option
+      const event = new Event("change", { bubbles: true });
+      selectElement.dispatchEvent(event);
+    }, formData.bench);
+
+    // Assuming you have already navigated to the page and have a page object
+    await delay(1000);
+    await page.waitForSelector("#CSAdvName", { visible: true }); // Ensure the element is present and visible
+    await page.evaluate(() => {
+      document.querySelector("#CSAdvName").click(); // Directly click on the element via JavaScript
+    });
+
+    // Type the advocate's name into the input field
+    await page.waitForSelector("#advocate_name", { visible: true });
+    await page.type("#advocate_name", formData.Advocate);
+
+    //selecting case status
+    // Based on formData.caseStatus, click the corresponding radio button
+    if (formData.caseStatus === "Pending") {
+      await page.click("#radPAdvt"); // Clicks on the "Pending" radio button
+    } else if (formData.caseStatus === "Disposed") {
+      await page.click("#radDAdvt"); // Clicks on the "Disposed" radio button
+    } else if (formData.caseStatus === "Both") {
+      await page.click("#radBAdvt"); // Clicks on the "Both" radio button
+    } else {
+      console.error("Invalid case status:", formData.caseStatus);
+    }
+
+    await delay(4000);
+
+    try {
+      const res = await attemptCaptcha(page);
+      console.log("CAPTCHA solved and form submitted successfully.");
+      console.log(res);
+      // Additional logic to confirm submission success here...
+    } catch (error) {
+      console.error("An error occurred:", error.message);
+    } finally {
+      // await browser.close(); // Ensure the browser is closed properly
+      console.log("done bro");
+    }
+
+    // Wait for the resultsto load
+    await delay(3000); // This delay may need to be adjusted depending on how long the site takes to load results
+
+    async function waitForElement(selector) {
+      await page.evaluate((selector) => {
+        return new Promise((resolve, reject) => {
+          const observer = new MutationObserver((mutations) => {
+            if (document.querySelector(selector)) {
+              resolve(true);
+              observer.disconnect();
+            }
+          });
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+          });
+          // Optional: set a timeout to stop waiting after a while
+          setTimeout(() => {
+            observer.disconnect();
+            reject(new Error("Timeout waiting for element"));
+          }, 60000); // 60 seconds timeout
+        });
+      }, selector);
+    }
+
+    await page.waitForSelector('#dispTable', { visible: true });
+    await delay(4000);
+    // saving the data
+
+    async function extractResults() {
+      // return await page.evaluate(() => {
       const data = [];
       const rows = document.querySelectorAll("#dispTable tbody tr");
       rows.forEach((row, index) => {
@@ -234,17 +234,17 @@ async function scrapeCourtData(formData) {
         });
       });
       return data;
-    // });
-  }
+      // });
+    }
 
-  const resultsData = await page.evaluate(extractResults);
-  console.log(resultsData)
-  return JSON.stringify(resultsData);
-} catch (error) {
-  console.error("An error occurred during scraping:", error);
-} finally {
-  await browser.close();
-}
+    const resultsData = await page.evaluate(extractResults);
+    console.log(resultsData)
+    return JSON.stringify(resultsData);
+  } catch (error) {
+    console.error("An error occurred during scraping:", error);
+  } finally {
+    await browser.close();
+  }
 }
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));

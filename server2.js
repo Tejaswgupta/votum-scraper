@@ -1,4 +1,5 @@
 import cors from "cors";
+import 'dotenv/config';
 import express from "express";
 import { fetchAdvocate } from "./advocate.js";
 import { fetchAdvocateHC } from "./advocateHighCourt.js";
@@ -7,7 +8,9 @@ import { fetchCaseNumHC } from "./caseNumberHighCourt.js";
 import { fetchCNR } from "./cnrNumber.js";
 import { fetchCNRhighcourt } from "./cnrNumberHighCourt.js";
 import { predictStatutes } from "./statute.js";
+
 const app = express();
+
 
 app.use(cors());
 app.use(express.json());
