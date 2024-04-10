@@ -48,7 +48,9 @@ async function attemptCaptcha(page) {
 
     // Clear the CAPTCHA input field before typing
     //Clear the CAPTCHA input field before typing
-    await page.evaluate(() => document.getElementById("adv_captcha_code").value = "");
+    await page.evaluate(
+      () => (document.getElementById("adv_captcha_code").value = "")
+    );
     // Enter the captcha text
     await page.type("#adv_captcha_code", text, { delay: 100 });
 
@@ -120,12 +122,10 @@ async function scrapeCourtData(formData) {
 
   const page = await browser.newPage();
 
-  
   await page.authenticate({
     username: `${process.env.USERNAME}`,
     password: `${process.env.PASSWORD}`,
   });
-
 
   try {
     await page.goto(
@@ -172,8 +172,9 @@ async function scrapeCourtData(formData) {
     await page.select("#sess_state_code", stateValue);
     console.log("Selected state:", formData.state);
 
-    // Ensure the districts are loaded
-    await page.waitForSelector("#sess_dist_code option[value='7']");
+    await page.waitForSelector("#loadMe", { visible: true });
+    await page.waitForSelector("#loadMe", { hidden: true });
+
     // Now select the District
     const districtSelect = await page.$("#sess_dist_code");
     const districtValue = await selectOptionByText(

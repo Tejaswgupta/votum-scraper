@@ -1,4 +1,3 @@
-
 import puppeteer from "puppeteer";
 import { getCaptchaUsingAPI } from "./utils.js";
 
@@ -164,11 +163,10 @@ async function delay(time) {
 
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
-
   console.log(`${process.env.USERNAME}`, `${process.env.PASSWORD}`);
 
   const browser = await puppeteer.launch({
-    headless: 'shell', // Adjust based on your preference
+    headless: "shell", // Adjust based on your preference
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -189,7 +187,7 @@ async function scrapeCourtData(formData) {
     "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index&app_token=8d21c32c306b556a9bd59555f64446f5810586c374d09eaa1fd6452834ca0fca"
   );
 
-  console.log(formData)
+  console.log(formData);
 
   // Handle any potential modals that might appear upon page load
   try {
@@ -229,8 +227,9 @@ async function scrapeCourtData(formData) {
   await page.select("#sess_state_code", stateValue);
   console.log("Selected state:", formData.state);
 
-  // Ensure the districts are loaded
-  await page.waitForSelector("#sess_dist_code option[value='7']");
+  await page.waitForSelector("#loadMe", { visible: true });
+  await page.waitForSelector("#loadMe", { hidden: true });
+
   // Now select the District
   const districtSelect = await page.$("#sess_dist_code");
   const districtValue = await selectOptionByText(
