@@ -105,18 +105,17 @@ async function scrapeCourtData(formData) {
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-accelerated-2d-canvas",
-      "--proxy-server=216.97.239.173:12323",
-      `--proxy-auth=${process.env.USERNAME}:${process.env.PASSWORD}`,
+      `--proxy-server=${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`,
+      `--proxy-auth=${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}`,
     ],
   }); // Set to false for debugging, true for production
 
   const page = await browser.newPage();
 
-  console.log(`${process.env.USERNAME}`, `${process.env.PASSWORD}`);
 
   await page.authenticate({
-    username: `${process.env.USERNAME}`,
-    password: `${process.env.PASSWORD}`,
+    username: `${process.env.PROXY_USERNAME}`,
+    password: `${process.env.PROXY_PASSWORD}`,
   });
 
 
