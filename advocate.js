@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import pupManager from "./pupManager.js"
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Improved CAPTCHA solving function with async file operations
@@ -109,23 +109,9 @@ async function attemptCaptcha(page) {
 }
 
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({
-    headless: "shell", // Adjust based on your preference
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-accelerated-2d-canvas",
-      `--proxy-server=${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`,
-      `--proxy-auth=${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}`,
-    ],
-  }); // Set to false for debugging, true for production
 
-  const page = await browser.newPage();
-
-  await page.authenticate({
-    username: `${process.env.PROXY_USERNAME}`,
-    password: `${process.env.PROXY_PASSWORD}`,
-  });
+  const page = await pupManager.getPage();
+  await pupManager.authenticatePage(page);
 
   try {
     await page.goto(
@@ -297,7 +283,7 @@ async function scrapeCourtData(formData) {
   } catch (error) {
     console.error("An error occurred during scraping:", error);
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
 

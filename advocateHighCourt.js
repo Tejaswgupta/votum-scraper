@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import pupManager from "./pupManager.js"
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to close any visible modal
@@ -91,8 +91,8 @@ async function attemptCaptcha(page) {
 }
 
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({ headless: 'shell' }); // headless: false for debugging
-  const page = await browser.newPage();
+  const page = await pupManager.getPage();
+
   try {
     await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
       waitUntil: "networkidle0",
@@ -243,7 +243,7 @@ async function scrapeCourtData(formData) {
   } catch (error) {
     console.error("An error occurred during scraping:", error);
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
 async function delay(time) {

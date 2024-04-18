@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import pupManager from "./pupManager.js"
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to close any visible modal
@@ -89,15 +89,8 @@ async function delay(time) {
 
 // This function will be triggered with the user's form data
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({
-    headless: 'shell', // Adjust based on your preference
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-accelerated-2d-canvas",
-    ],
-  }); // Set to false for debugging, true for production
-  const page = await browser.newPage();
+
+  const page = await pupManager.getPage();
 
   // Navigate to the eCourts page
   await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
@@ -249,7 +242,7 @@ async function scrapeCourtData(formData) {
     return reformattedData;
   });
   // Close the browser when done or not needed
-  await browser.close();
+  await page.close();
   return JSON.stringify(data, null, 2);
 }
 

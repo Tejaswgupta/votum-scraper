@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import pupManager from "./pupManager.js"
 import { getCaptchaUsingAPI } from "./utils.js";
 
 // Function to take a screenshot of the CAPTCHA and solve it
@@ -165,24 +165,8 @@ async function delay(time) {
 async function scrapeCourtData(formData) {
   console.log(`${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}`);
 
-  const browser = await puppeteer.launch({
-    headless: "shell", // Adjust based on your preference
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-accelerated-2d-canvas",
-      `--proxy-server=${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`,
-      `--proxy-auth=${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}`,
-    ],
-  });
-
-
-  const page = await browser.newPage();
-
-  await page.authenticate({
-    username: `${process.env.PROXY_USERNAME}`,
-    password: `${process.env.PROXY_PASSWORD}`,
-  });
+  const page = await pupManager.getPage();
+  await pupManager.authenticatePage(page);
 
   // Navigate to the eCourts page
   await page.goto(
@@ -332,7 +316,7 @@ async function scrapeCourtData(formData) {
     return data;
   });
 
-  await browser.close();
+  await page.close();
   return JSON.stringify(resultsData, null, 2);
 }
 
