@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import pupManager from "./pupManager.js"
 import { getCaptchaUsingAPI } from "./utils.js";
 
 
@@ -132,8 +132,7 @@ async function attemptCaptcha(page) {
 }
 
 async function scrapeCourtData(formData) {
-  const browser = await puppeteer.launch({ headless: 'shell' }); // headless: false for debugging
-  const page = await browser.newPage();
+  const page = await pupManager.getPage();
 
   await page.goto("https://hcservices.ecourts.gov.in/hcservices/", {
     waitUntil: "networkidle0",
@@ -142,7 +141,7 @@ async function scrapeCourtData(formData) {
   // Click on the 'Case Status' menu item
   await page.click("#leftPaneMenuCS img.case-status-dp");
 
-  await delay(2000);
+
 
   // closing the modal
 
