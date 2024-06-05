@@ -1,0 +1,136 @@
+{
+    "status": 200,
+    "msg": "success",
+    "data": {
+        "case_details": [
+            {
+                "0": "9910105107912023",
+                "1": "D",
+                "2": "120",
+                "3": "2024",
+                "4": "Company Appeal(AT)(Ins)",
+                "6": null,
+                "7": "2024-01-17",
+                "filing_no": "9910105107912023",
+                "status": "D",
+                "case_no": "120",
+                "case_year": "2024",
+                "case_type": "Company Appeal(AT)(Ins)",
+                "date_of_filing": "2023-12-28",
+                "registration_date": "2024-01-17"
+            }
+        ],
+        "party_details": {
+            "applicant_name": [
+                {
+                    "0": "State Tax Officer 4",
+                    "name": "State Tax Officer 4"
+                }
+            ],
+            "respondant_name": [
+                {
+                    "0": "Manish Buchasia Resolution Professional of Superdrawn Wire Industries Private Limited and Ors",
+                    "name": "Manish Buchasia Resolution Professional of Superdrawn Wire Industries Private Limited and Ors"
+                },
+                {
+                    "0": "DILIPKUMAR NATVARLAL JAGAD",
+                    "name": "DILIPKUMAR NATVARLAL JAGAD"
+                },
+                {
+                    "0": "Superdrawn Wire Industries Private Limited",
+                    "name": "Superdrawn Wire Industries Private Limited"
+                }
+            ]
+        },
+        "legal_representative": {
+            "applicant_legal_representative_name": [
+                "Aastha Mehta"
+            ],
+            "respondent_legal_representative_name": []
+        },
+        "first_hearing_details": {
+            "0": 1,
+            "1": "2024-01-31",
+            "2": "For Admission (Fresh Case)",
+            "court_no": 1,
+            "hearing_date": "2024-01-31",
+            "stage_of_case": "For Admission (Fresh Case)",
+            "coram": " Justice Ashok Bhushan (Chairperson) , Hon'ble Mr. Barun Mitra (Member (Technical)) , Hon'ble Mr. Arun Baroka (Member (Technical)) , "
+        },
+        "last_hearing_details": {
+            "0": 1,
+            "1": "2024-01-31",
+            "2": "For Admission (Fresh Case)",
+            "court_no": 1,
+            "hearing_date": "2024-01-31",
+            "stage_of_case": "For Admission (Fresh Case)",
+            "coram": " Justice Ashok Bhushan (Chairperson) , Hon'ble Mr. Barun Mitra (Member (Technical)) , Hon'ble Mr. Arun Baroka (Member (Technical)) , "
+        },
+        "next_hearing_details": {
+            "0": 1,
+            "1": "2024-01-31",
+            "2": "For Admission (Fresh Case)",
+            "court_no": 1,
+            "hearing_date": "2024-01-31",
+            "stage_of_case": "For Admission (Fresh Case)",
+            "coram": " Justice Ashok Bhushan (Chairperson) , Hon'ble Mr. Barun Mitra (Member (Technical)) , Hon'ble Mr. Arun Baroka (Member (Technical)) , "
+        },
+        "case_history": [
+            {
+                "0": "9910105107912023",
+                "1": 1,
+                "2": "2024-01-31",
+                "3": "For Admission (Fresh Case)",
+                "filing_no": "9910105107912023",
+                "court_no": 1,
+                "hearing_date": "2024-01-31",
+                "purpose": "For Admission (Fresh Case)"
+            }
+        ],
+        "order_history": [
+            {
+                "0": "2024-01-31",
+                "1": "J",
+                "2": "/NCLAT_Documents/CIS_Documents/casedoc/orders/DELHI/2024-01-31/courts/1/daily/1706702289103612192765ba35d152950.pdf",
+                "order_date": "2024-01-31",
+                "order_type": "J",
+                "order_pdf_download": "/NCLAT_Documents/CIS_Documents/casedoc/orders/DELHI/2024-01-31/courts/1/daily/1706702289103612192765ba35d152950.pdf"
+            }
+        ],
+        "ias_other_application": [
+            {
+                "0": "9910105107922023",
+                "1": "D",
+                "2": "383",
+                "3": "2024",
+                "4": "IA",
+                "5": "2023-12-28",
+                "6": "2024-01-17",
+                "filing_no": "9910105107922023",
+                "status": "D",
+                "case_no": "383",
+                "case_year": "2024",
+                "case_type": "IA",
+                "filing_date": "2023-12-28",
+                "registration_date": "2024-01-17"
+            },
+            {
+                "0": "9910105107932023",
+                "1": "D",
+                "2": "384",
+                "3": "2024",
+                "4": "IA",
+                "5": "2023-12-28",
+                "6": "2024-01-17",
+                "filing_no": "9910105107932023",
+                "status": "D",
+                "case_no": "384",
+                "case_year": "2024",
+                "case_type": "IA",
+                "filing_date": "2023-12-28",
+                "registration_date": "2024-01-17"
+            }
+        ],
+        "connected_cases": []
+    }
+}
